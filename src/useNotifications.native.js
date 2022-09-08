@@ -16,8 +16,8 @@ const CHANNEL_ID = 'org.gooddollar.notifications.claim';
 
 const NOTIFICATION = {
   title: "It's that time of the day 💸 💙",
-  message: 'Claim your free GoodDollars now. It takes 10 seconds.'
-}
+  message: 'Claim your free GoodDollars now. It takes 10 seconds.',
+};
 
 const getScheduleId = userStorage => {
   if (!userStorage) {
@@ -113,23 +113,29 @@ export const useNotificationsOptions = () => {
 
 export const useNotifications = (onOpened = noop, onReceived = noop) => {
   const [enabled] = useNotificationsOptions();
-  const mountedRef = useRef(false)
+  const mountedRef = useRef(false);
 
-  const receivedHandler = useCallback((notification, completion) => {
-    onReceived(notification, getCategory(notification));
+  const receivedHandler = useCallback(
+    (notification, completion) => {
+      onReceived(notification, getCategory(notification));
 
-    // should call completion otherwise notifications won't receive in background
-    completion({alert: true, sound: true, badge: false});
-  }, [onReceived]);
+      // should call completion otherwise notifications won't receive in background
+      completion({alert: true, sound: true, badge: false});
+    },
+    [onReceived],
+  );
 
-  const openedHandler = useCallback((notification, completion = noop) => {
-    onOpened(notification, getCategory(notification));
-    completion();
-  }, [onOpened]);
+  const openedHandler = useCallback(
+    (notification, completion = noop) => {
+      onOpened(notification, getCategory(notification));
+      completion();
+    },
+    [onOpened],
+  );
 
   useEffect(() => {
     if (!enabled || mountedRef.current) {
-      return
+      return;
     }
 
     mountedRef.current = true;
@@ -139,11 +145,11 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
       .catch(noop)
       .then(notification => {
         if (!notification) {
-          return
+          return;
         }
 
-        openedHandler(notification)
-      })
+        openedHandler(notification);
+      });
   }, [enabled, openedHandler]);
 
   useEffect(() => {

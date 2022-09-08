@@ -52,4 +52,4 @@ export const PermissionsAPI = new (class {
   }
 })();
 
-export const getInitialNotification = async () => undefined
+export const getInitialNotification = async () => undefined;
