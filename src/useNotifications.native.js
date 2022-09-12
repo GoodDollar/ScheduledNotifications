@@ -1,13 +1,14 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import {Notifications} from 'react-native-notifications';
 import PushNotification from 'react-native-push-notification';
 
-import usePermissions from './usePermissions';
-import {Permissions} from './types';
-import {useUserStorage} from './useUserStorage';
 import Config from './config';
 import {noop} from './utils';
 import {getInitialNotification} from './apis';
+import {
+  useNotificationsStateSwitch,
+  useStoreProperty,
+} from './useNotifications.common';
 
 export const notificationsAvailable = true;
 
@@ -19,14 +20,6 @@ const NOTIFICATION = {
   message: 'Claim your free GoodDollars now. It takes 10 seconds.',
 };
 
-const getScheduleId = userStorage => {
-  if (!userStorage) {
-    return null;
-  }
-
-  return userStorage.userProperties.getLocal('notificationsScheduleId');
-};
-
 const getCategory = notification => {
   const {payload} = notification || {};
   const {category} = payload || {};
@@ -35,11 +28,9 @@ const getCategory = notification => {
 };
 
 export const useNotificationsOptions = () => {
-  const userStorage = useUserStorage();
-  const [scheduleId, setScheduleId] = useState(() =>
-    getScheduleId(userStorage),
+  const [scheduleId, setScheduleId] = useStoreProperty(
+    'notificationsScheduleId',
   );
-  const enabled = useMemo(() => !!scheduleId, [scheduleId]);
 
   const updateState = useCallback(
     value => {
@@ -65,42 +56,11 @@ export const useNotificationsOptions = () => {
       }
 
       setScheduleId(newScheduleId);
-      userStorage.userProperties.safeSet(
-        'notificationsScheduleId',
-        newScheduleId,
-      );
     },
-    [scheduleId, setScheduleId, userStorage],
+    [scheduleId, setScheduleId],
   );
 
-  const onAllowed = useCallback(() => updateState(true), [updateState]);
-  const [allowed, requestPermission] = usePermissions(
-    Permissions.Notifications,
-    {
-      requestOnMounted: false,
-      onAllowed,
-    },
-  );
-
-  const toggleEnabled = useCallback(
-    newState => {
-      if (newState === enabled) {
-        return;
-      }
-
-      if (newState && !allowed) {
-        requestPermission();
-        return;
-      }
-
-      updateState(newState);
-    },
-    [allowed, enabled, requestPermission, updateState],
-  );
-
-  useEffect(() => {
-    setScheduleId(getScheduleId(userStorage));
-  }, [userStorage]);
+  const switchState = useNotificationsStateSwitch(scheduleId, updateState);
 
   useEffect(() => {
     PushNotification.createChannel({
@@ -108,7 +68,8 @@ export const useNotificationsOptions = () => {
       channelName: 'GoodDollar claim notifications',
     });
   }, []);
-  return [enabled, toggleEnabled];
+
+  return switchState;
 };
 
 export const useNotifications = (onOpened = noop, onReceived = noop) => {

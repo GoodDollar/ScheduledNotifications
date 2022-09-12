@@ -1,7 +1,7 @@
 import {Notifications} from 'react-native-notifications';
 import PushNotificationIOS from '@react-native-community/push-notification-ios';
 
-export {PermissionsAPI} from './apis.permissions';
+export * from './apis.common';
 
 export const getInitialNotification = async () => {
   let notification = await Notifications.getInitialNotification();

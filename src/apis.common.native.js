@@ -5,6 +5,7 @@ import {Platform} from 'react-native';
 import PushNotification from 'react-native-push-notification';
 
 import {Permissions, PermissionStatuses} from './types';
+import {noop} from './utils';
 
 const {Granted, Denied, Prompt, Undetermined} = PermissionStatuses;
 
@@ -79,3 +80,5 @@ export const PermissionsAPI = new (class {
       : Prompt;
   }
 })();
+
+export const MessagingAPI = {getToken: noop, onMessage: noop};
