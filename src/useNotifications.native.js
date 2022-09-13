@@ -25,7 +25,7 @@ const getCategory = notification => {
   return category;
 };
 
-export {useNotificationsSupport} from './useNotifications.common'
+export {useNotificationsSupport} from './useNotifications.common';
 
 export const useNotificationsOptions = () => {
   const [scheduleId, setScheduleId] = useStoreProperty(

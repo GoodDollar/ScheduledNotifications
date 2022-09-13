@@ -37,5 +37,4 @@ if (messaging.isSupported()) {
   });
 
   // TODO: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerGlobalScope/notificationclick_event
-
 }

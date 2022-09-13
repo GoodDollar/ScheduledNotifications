@@ -6,7 +6,7 @@ import {
 } from './useNotifications.common';
 import {useCallback, useEffect} from 'react';
 
-export {useNotificationsSupport} from './useNotifications'
+export {useNotificationsSupport} from './useNotifications';
 
 export const useNotificationsOptions = () => {
   const [token, setToken] = useStoreProperty('notificationsToken');
@@ -34,22 +34,26 @@ export const useNotificationsOptions = () => {
 export const useNotifications = (onOpened = noop, onReceived = noop) => {
   const [enabled] = useNotificationsOptions();
 
-  const handleReceived = useCallback(payload => {
-    console.log(payload);
-    onReceived(payload)
+  const handleReceived = useCallback(
+    payload => {
+      console.log(payload);
+      onReceived(payload);
 
-    //TODO: check payload, adjust
-    const {title, body, image} = payload.notification
+      //TODO: check payload, adjust
+      const {title, body, image} = payload.notification;
 
-    const notification = new Notification(title, {
-      body, icon: image
-    })
+      const notification = new Notification(title, {
+        body,
+        icon: image,
+      });
 
-    notification.addEventListener('click', event => {
-      event.preventDefault()
-      onOpened(payload)
-    })
-  }, [onReceived, onOpened]);
+      notification.addEventListener('click', event => {
+        event.preventDefault();
+        onOpened(payload);
+      });
+    },
+    [onReceived, onOpened],
+  );
 
   useEffect(() => {
     if (!enabled) {

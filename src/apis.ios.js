@@ -16,4 +16,4 @@ export const NotificationsAPI = new (class extends NotificationsAPIClass {
 
     return notification;
   }
-})()
+})();

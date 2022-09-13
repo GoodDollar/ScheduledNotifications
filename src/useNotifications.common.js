@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import { NotificationsAPI } from './apis';
+import {NotificationsAPI} from './apis';
 import {Permissions} from './types';
 import usePermissions from './usePermissions';
 import {useUserStorage} from './useUserStorage';
@@ -34,19 +34,18 @@ export const useStoreProperty = property => {
 };
 
 export const useNotificationsSupport = () => {
-  const [supportedState, setSupportedState] = useState('')
-  const supported = useMemo(() => true === supportedState, [supportedState])
-  const unsupported = useMemo(() => false === supportedState, [supportedState])
+  const [supportedState, setSupportedState] = useState('');
+  const supported = useMemo(() => supportedState === true, [supportedState]);
+  const unsupported = useMemo(() => supportedState === false, [supportedState]);
 
   useEffect(() => {
-    NotificationsAPI
-      .isSupported()
+    NotificationsAPI.isSupported()
       .catch(() => false)
       .then(setSupportedState);
-  }, [setSupportedState])
+  }, [setSupportedState]);
 
-  return [supported, unsupported]
-}
+  return [supported, unsupported];
+};
 
 export const useNotificationsStateSwitch = (storeProp, updateState) => {
   const enabled = useMemo(() => !!storeProp, [storeProp]);

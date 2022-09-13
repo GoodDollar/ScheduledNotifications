@@ -34,7 +34,7 @@ export const OptionsView = () => {
     );
   }
 
-  return null
+  return null;
 };
 
 export const NotificationsView = () => {

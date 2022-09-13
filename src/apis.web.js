@@ -1,27 +1,34 @@
 import {initializeApp} from 'firebase/app';
-import {getMessaging, getToken, onMessage, isSupported, deleteToken} from 'firebase/messaging';
+import {
+  getMessaging,
+  getToken,
+  onMessage,
+  isSupported,
+  deleteToken,
+} from 'firebase/messaging';
 
 import Config from './config';
 import {Permissions, PermissionStatuses} from './types';
 
-const {Granted, Undetermined, Denied, Disabled} = PermissionStatuses;
-const toStatusEnum = status => [Granted, Denied].includes(status) ? status : Undetermined;
+const {Granted, Undetermined, Denied, Disabled, Prompt} = PermissionStatuses;
+const toStatusEnum = status =>
+  [Granted, Denied].includes(status) ? status : Undetermined;
 
 export const NotificationsAPI = new (class {
   async isSupported() {
-    return isSupported()
+    return isSupported();
   }
 
   async getInitialNotification() {
     // TODO: ?
-    return null
+    return null;
   }
-})()
+})();
 
 export const PermissionsAPI = new (class {
   // permissions enum to platform permissions map
   platformPermissions = {
-    [Permissions.Notifications]: 'notifications'
+    [Permissions.Notifications]: 'notifications',
   };
 
   disabledPermissions = {};
@@ -46,13 +53,13 @@ export const PermissionsAPI = new (class {
       return Granted;
     }
 
-    const status = await this._queryPermissions(platformPermission)
+    const status = await this._queryPermissions(platformPermission);
 
     // check notifications permissions if no permissions API
     if (status === false) {
-      switch(permission) {
+      switch (permission) {
         case Permissions.Notifications:
-          return this._checkNotificationsPermission()
+          return this._checkNotificationsPermission();
         default:
           break;
       }
@@ -61,13 +68,13 @@ export const PermissionsAPI = new (class {
     // could be changed/extended so we need this switch to map them to platform-independed statuses
     switch (status) {
       case 'granted':
-        return Granted
+        return Granted;
       case 'prompt':
-        return Prompt
+        return Prompt;
       case 'denied':
-        return Denied
+        return Denied;
       default:
-        return Undetermined
+        return Undetermined;
     }
   }
 
@@ -82,12 +89,12 @@ export const PermissionsAPI = new (class {
     const platformPermission = platformPermissions[permission];
 
     if (permission in disabledPermissions) {
-      return false
+      return false;
     }
 
     // no platform permission found - that means feature doesn't requires permissions on this platform
     if (!platformPermission) {
-      return true
+      return true;
     }
 
     try {
@@ -95,30 +102,30 @@ export const PermissionsAPI = new (class {
       // as permissions API doesn't supports yet requesting for permissions
       switch (permission) {
         case Permissions.Notifications:
-          await this._requestNotificationsPermission()
-          break
+          await this._requestNotificationsPermission();
+          break;
         default:
-          break
+          break;
       }
 
-      return true
+      return true;
     } catch {
-      return false
+      return false;
     }
   }
 
   /** @private */
   async _checkNotificationsPermission() {
     try {
-      const notificationsSupported = await isSupported()
+      const notificationsSupported = await isSupported();
 
       if (!notificationsSupported) {
-        throw new Error('Your browser doesn\'t supports push notifications')
+        throw new Error("Your browser doesn't supports push notifications");
       }
 
       return toStatusEnum(Notification.permission);
     } catch {
-      return Disabled
+      return Disabled;
     }
   }
 
@@ -127,7 +134,7 @@ export const PermissionsAPI = new (class {
     const permission = await Notification.requestPermission();
 
     if (toStatusEnum(permission) !== PermissionStatuses.Granted) {
-      throw new Error('Notification permission denied by user')
+      throw new Error('Notification permission denied by user');
     }
   }
 
@@ -135,12 +142,12 @@ export const PermissionsAPI = new (class {
   async _queryPermissions(name) {
     try {
       // requesting permissions
-      const { state, status } = await navigator.permissions.query({ name })
+      const {state, status} = await navigator.permissions.query({name});
 
       // if succeeded - setting value to return from the response
-      return status || state
+      return status || state;
     } catch {
-      return false
+      return false;
     }
   }
 })();

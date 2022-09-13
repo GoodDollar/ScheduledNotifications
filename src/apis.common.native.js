@@ -81,10 +81,14 @@ export const PermissionsAPI = new (class {
   }
 })();
 
-export const MessagingAPI = {getToken: noop, deleteToken: noop, onMessage: noop};
+export const MessagingAPI = {
+  getToken: noop,
+  deleteToken: noop,
+  onMessage: noop,
+};
 
 export class NotificationsAPIClass {
-  async getInitialNotification () {
+  async getInitialNotification() {
     return Notifications.getInitialNotification();
   }
 
