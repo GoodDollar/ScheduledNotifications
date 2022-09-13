@@ -35,4 +35,7 @@ if (messaging.isSupported()) {
 
     self.registration.showNotification(notificationTitle, notificationOptions);
   });
+
+  // TODO: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerGlobalScope/notificationclick_event
+
 }

@@ -34,9 +34,22 @@ export const useNotificationsOptions = () => {
 export const useNotifications = (onOpened = noop, onReceived = noop) => {
   const [enabled] = useNotificationsOptions();
 
-  const handleOpened = useCallback(payload => {
+  const handleReceived = useCallback(payload => {
     console.log(payload);
-  }, []);
+    onReceived(payload)
+
+    //TODO: check payload, adjust
+    const {title, body, image} = payload.notification
+
+    const notification = new Notification(title, {
+      body, icon: image
+    })
+
+    notification.addEventListener('click', event => {
+      event.preventDefault()
+      onOpened(payload)
+    })
+  }, [onReceived, onOpened]);
 
   useEffect(() => {
     if (!enabled) {
@@ -46,13 +59,13 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
     const onMessage = ({data}) => {
       const {message, payload} = data;
 
-      if (message === 'notification') {
-        handleOpened(payload);
+      if (message !== 'notification') {
+        handleReceived(payload);
       }
     };
 
     const {serviceWorker} = window;
-    const unsubscribe = MessagingAPI.onMessage(handleOpened);
+    const unsubscribe = MessagingAPI.onMessage(handleReceived);
 
     serviceWorker.addEventListener('message', onMessage);
 
@@ -60,5 +73,5 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
       serviceWorker.removeEventListener('message', onMessage);
       unsubscribe();
     };
-  }, [enabled, handleOpened]);
+  }, [enabled, handleReceived]);
 };
