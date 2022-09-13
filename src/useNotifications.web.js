@@ -6,7 +6,7 @@ import {
 } from './useNotifications.common';
 import {useCallback, useEffect} from 'react';
 
-export const notificationsAvailable = true;
+export {useNotificationsSupport} from './useNotifications'
 
 export const useNotificationsOptions = () => {
   const [token, setToken] = useStoreProperty('notificationsToken');
@@ -17,6 +17,8 @@ export const useNotificationsOptions = () => {
 
       if (value === true) {
         newToken = await MessagingAPI.getToken();
+      } else {
+        await MessagingAPI.deleteToken();
       }
 
       setToken(newToken);

@@ -21,29 +21,18 @@ firebase.initializeApp(firebaseConfig);
 
 // Retrieve firebase messaging
 const messaging = firebase.messaging();
-const notificationsAvailable =
-  typeof Notification !== 'undefined' && Notification.permission === 'granted';
 
-messaging.onBackgroundMessage(async payload => {
-  console.log('Received background message ', payload);
+if (messaging.isSupported()) {
+  messaging.onBackgroundMessage(async payload => {
+    console.log('Received background message ', payload);
 
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-  };
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+      body: payload.notification.body,
+    };
 
-  // TODO: custom fields
+    // TODO: custom fields
 
-  if (notificationsAvailable) {
     self.registration.showNotification(notificationTitle, notificationOptions);
-  } else {
-    const [client] = await clients.matchAll();
-
-    if (client) {
-      client.postMessage({
-        message: 'notification',
-        payload,
-      });
-    }
-  }
-});
+  });
+}
