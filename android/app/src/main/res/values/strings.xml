@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ScheduledNotifications</string>
+    <color name="white">#FFF</color>
 </resources>
