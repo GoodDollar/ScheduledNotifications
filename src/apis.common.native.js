@@ -1,7 +1,7 @@
 // @flow
 
 import {Platform} from 'react-native';
-
+import Notifications from 'react-native-notifications';
 import PushNotification from 'react-native-push-notification';
 
 import {Permissions, PermissionStatuses} from './types';
@@ -81,4 +81,18 @@ export const PermissionsAPI = new (class {
   }
 })();
 
-export const MessagingAPI = {getToken: noop, onMessage: noop};
+export const MessagingAPI = {
+  getToken: noop,
+  deleteToken: noop,
+  onMessage: noop,
+};
+
+export class NotificationsAPIClass {
+  async getInitialNotification() {
+    return Notifications.getInitialNotification();
+  }
+
+  async isSupported() {
+    return true;
+  }
+}

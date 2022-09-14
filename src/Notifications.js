@@ -1,7 +1,7 @@
 import React, {useCallback, useState} from 'react';
 import {Text, View, Pressable, Switch} from 'react-native';
 import {
-  notificationsAvailable,
+  useNotificationsSupport,
   useNotificationsOptions,
   useNotifications,
 } from './useNotifications';
@@ -9,8 +9,9 @@ import {styles} from './theme';
 
 export const OptionsView = () => {
   const [enabled, toggleEnabled] = useNotificationsOptions();
+  const [supported, unsupported] = useNotificationsSupport();
 
-  if (!notificationsAvailable) {
+  if (unsupported) {
     return (
       <Text style={styles.text}>
         Notifications are not available on Your platform
@@ -18,18 +19,22 @@ export const OptionsView = () => {
     );
   }
 
-  return (
-    <>
-      <Text style={styles.text}>Enable notifications</Text>
-      <Switch
-        trackColor={{false: '#767577', true: '#81b0ff'}}
-        thumbColor={enabled ? '#f5dd4b' : '#f4f3f4'}
-        ios_backgroundColor="#3e3e3e"
-        onValueChange={toggleEnabled}
-        value={enabled}
-      />
-    </>
-  );
+  if (supported) {
+    return (
+      <>
+        <Text style={styles.text}>Enable notifications</Text>
+        <Switch
+          trackColor={{false: '#767577', true: '#81b0ff'}}
+          thumbColor={enabled ? '#f5dd4b' : '#f4f3f4'}
+          ios_backgroundColor="#3e3e3e"
+          onValueChange={toggleEnabled}
+          value={enabled}
+        />
+      </>
+    );
+  }
+
+  return null;
 };
 
 export const NotificationsView = () => {

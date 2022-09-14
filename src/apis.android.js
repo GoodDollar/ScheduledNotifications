@@ -1,6 +1,5 @@
-import Notifications from 'react-native-notifications';
+import {NotificationsAPIClass} from './apis.common';
 
-export * from './apis.common';
+export {PermissionsAPI, MessagingAPI} from './apis.common';
 
-export const getInitialNotification = async () =>
-  Notifications.getInitialNotification();
+export const NotificationsAPI = new NotificationsAPIClass();

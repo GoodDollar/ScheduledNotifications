@@ -1,18 +1,35 @@
 import {initializeApp} from 'firebase/app';
-import {getMessaging, getToken, onMessage} from 'firebase/messaging';
+import {
+  getMessaging,
+  getToken,
+  onMessage,
+  isSupported,
+  deleteToken,
+} from 'firebase/messaging';
 
 import Config from './config';
 import {Permissions, PermissionStatuses} from './types';
 
-const {Granted, Undetermined, Denied, Disabled} = PermissionStatuses;
-const notificationsApi =
-  typeof Notification === 'undefined' ? {} : Notification;
+const {Granted, Undetermined, Denied, Disabled, Prompt} = PermissionStatuses;
 const toStatusEnum = status =>
   [Granted, Denied].includes(status) ? status : Undetermined;
 
+export const NotificationsAPI = new (class {
+  async isSupported() {
+    return isSupported();
+  }
+
+  async getInitialNotification() {
+    // TODO: ?
+    return null;
+  }
+})();
+
 export const PermissionsAPI = new (class {
   // permissions enum to platform permissions map
-  platformPermissions = {};
+  platformPermissions = {
+    [Permissions.Notifications]: 'notifications',
+  };
 
   disabledPermissions = {};
 
@@ -24,18 +41,11 @@ export const PermissionsAPI = new (class {
    */
   async check(permission) {
     const {platformPermissions, disabledPermissions} = this;
-
     const platformPermission = platformPermissions[permission];
 
-    // if permission is disabled - returning disabled status
-    // this needs to temporarly ignore notifications permissions requests on web
+    // if permission or not supported is disabled - returning disabled status
     if (permission in disabledPermissions) {
       return Disabled;
-    }
-
-    // check notifications permissions
-    if (Permissions.Notifications === permission) {
-      return toStatusEnum(notificationsApi.permission);
     }
 
     // no platform permission found - that means feature doesn't requires permissions on this platform
@@ -43,7 +53,29 @@ export const PermissionsAPI = new (class {
       return Granted;
     }
 
-    return Undetermined;
+    const status = await this._queryPermissions(platformPermission);
+
+    // check notifications permissions if no permissions API
+    if (status === false) {
+      switch (permission) {
+        case Permissions.Notifications:
+          return this._checkNotificationsPermission();
+        default:
+          break;
+      }
+    }
+
+    // could be changed/extended so we need this switch to map them to platform-independed statuses
+    switch (status) {
+      case 'granted':
+        return Granted;
+      case 'prompt':
+        return Prompt;
+      case 'denied':
+        return Denied;
+      default:
+        return Undetermined;
+    }
   }
 
   /*
@@ -56,36 +88,69 @@ export const PermissionsAPI = new (class {
     const {platformPermissions, disabledPermissions} = this;
     const platformPermission = platformPermissions[permission];
 
-    // request notifications permissions
-    if (Permissions.Notifications === permission) {
-      return this._requestNotificationsPermission();
+    if (permission in disabledPermissions) {
+      return false;
     }
 
     // no platform permission found - that means feature doesn't requires permissions on this platform
-    if (!(permission in disabledPermissions) && !platformPermission) {
+    if (!platformPermission) {
       return true;
     }
 
-    return false;
+    try {
+      // requesting permissions by direct calling corresponding APIs
+      // as permissions API doesn't supports yet requesting for permissions
+      switch (permission) {
+        case Permissions.Notifications:
+          await this._requestNotificationsPermission();
+          break;
+        default:
+          break;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** @private */
+  async _checkNotificationsPermission() {
+    try {
+      const notificationsSupported = await isSupported();
+
+      if (!notificationsSupported) {
+        throw new Error("Your browser doesn't supports push notifications");
+      }
+
+      return toStatusEnum(Notification.permission);
+    } catch {
+      return Disabled;
+    }
   }
 
   /** @private */
   async _requestNotificationsPermission() {
+    const permission = await Notification.requestPermission();
+
+    if (toStatusEnum(permission) !== PermissionStatuses.Granted) {
+      throw new Error('Notification permission denied by user');
+    }
+  }
+
+  /** @private */
+  async _queryPermissions(name) {
     try {
-      if (typeof notificationsApi.requestPermission === 'function') {
-        const permission = await notificationsApi.requestPermission();
+      // requesting permissions
+      const {state, status} = await navigator.permissions.query({name});
 
-        return toStatusEnum(permission) === PermissionStatuses.Granted;
-      }
-
-      return await MessagingAPI.getToken().then(Boolean);
+      // if succeeded - setting value to return from the response
+      return status || state;
     } catch {
       return false;
     }
   }
 })();
-
-export const getInitialNotification = async () => undefined;
 
 export const MessagingAPI = new (class {
   constructor(config) {
@@ -97,7 +162,7 @@ export const MessagingAPI = new (class {
       firebaseMessagingSenderId,
       firebaseAppId,
       firebaseWebPushKeypair,
-    } = config;
+    } = Config;
 
     const app = initializeApp({
       apiKey: firebaseApiKey,
@@ -115,17 +180,18 @@ export const MessagingAPI = new (class {
   }
 
   async getToken() {
-    let {_lastToken, messaging, tokenOpts} = this;
+    const {messaging, tokenOpts} = this;
 
-    if (!_lastToken) {
-      _lastToken = await getToken(messaging, tokenOpts);
-      Object.assign(this, {_lastToken});
-    }
+    return getToken(messaging, tokenOpts);
+  }
 
-    return _lastToken;
+  async deleteToken() {
+    const {messaging} = this;
+
+    return deleteToken(messaging);
   }
 
   onMessage(callback) {
     return onMessage(this.messaging, callback);
   }
-})(Config);
+})();

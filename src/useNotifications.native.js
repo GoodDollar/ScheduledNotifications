@@ -10,8 +10,6 @@ import {
   useStoreProperty,
 } from './useNotifications.common';
 
-export const notificationsAvailable = true;
-
 const {notificationTime, notificationSchedule} = Config;
 const CHANNEL_ID = 'org.gooddollar.notifications.claim';
 
@@ -26,6 +24,8 @@ const getCategory = notification => {
 
   return category;
 };
+
+export {useNotificationsSupport} from './useNotifications.common';
 
 export const useNotificationsOptions = () => {
   const [scheduleId, setScheduleId] = useStoreProperty(
