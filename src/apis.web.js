@@ -20,7 +20,6 @@ export const NotificationsAPI = new (class {
   }
 
   async getInitialNotification() {
-    // TODO: ?
     return null;
   }
 })();

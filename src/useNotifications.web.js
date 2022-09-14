@@ -1,12 +1,22 @@
 import {MessagingAPI} from './apis';
 import {noop} from './utils';
 import {
+  getCategory,
   useNotificationsStateSwitch,
   useStoreProperty,
 } from './useNotifications.common';
 import {useCallback, useEffect} from 'react';
 
-export {useNotificationsSupport} from './useNotifications';
+const getNotification = payload => {
+  const {data, notification} = payload;
+
+  return {
+    ...notification,
+    payload: data,
+  };
+};
+
+export {useNotificationsSupport} from './useNotifications.common';
 
 export const useNotificationsOptions = () => {
   const [token, setToken] = useStoreProperty('notificationsToken');
@@ -36,20 +46,20 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
 
   const handleReceived = useCallback(
     payload => {
-      console.log(payload);
-      onReceived(payload);
+      const notification = getNotification(payload);
+      const category = getCategory(notification);
+      const {title, body, image} = notification;
 
-      //TODO: check payload, adjust
-      const {title, body, image} = payload.notification;
+      onReceived(notification, category);
 
-      const notification = new Notification(title, {
+      const localNotification = new Notification(title, {
         body,
         icon: image,
       });
 
-      notification.addEventListener('click', event => {
+      localNotification.addEventListener('click', event => {
         event.preventDefault();
-        onOpened(payload);
+        onOpened(notification, category);
       });
     },
     [onReceived, onOpened],
@@ -60,22 +70,6 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
       return;
     }
 
-    const onMessage = ({data}) => {
-      const {message, payload} = data;
-
-      if (message !== 'notification') {
-        handleReceived(payload);
-      }
-    };
-
-    const {serviceWorker} = window;
-    const unsubscribe = MessagingAPI.onMessage(handleReceived);
-
-    serviceWorker.addEventListener('message', onMessage);
-
-    return () => {
-      serviceWorker.removeEventListener('message', onMessage);
-      unsubscribe();
-    };
+    return MessagingAPI.onMessage(handleReceived);
   }, [enabled, handleReceived]);
 };

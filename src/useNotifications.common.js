@@ -12,6 +12,13 @@ const getStoreProperty = (userStorage, property) => {
   return userStorage.userProperties.getLocal(property);
 };
 
+export const getCategory = notification => {
+  const {payload} = notification || {};
+  const {category} = payload || {};
+
+  return category;
+};
+
 export const useStoreProperty = property => {
   const userStorage = useUserStorage();
   const [propertyValue, setPropertyValue] = useState(() =>

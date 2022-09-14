@@ -8,6 +8,7 @@ import {getInitialNotification} from './apis';
 import {
   useNotificationsStateSwitch,
   useStoreProperty,
+  getCategory,
 } from './useNotifications.common';
 
 const {notificationTime, notificationSchedule} = Config;
@@ -16,13 +17,6 @@ const CHANNEL_ID = 'org.gooddollar.notifications.claim';
 const NOTIFICATION = {
   title: "It's that time of the day 💸 💙",
   message: 'Claim your free GoodDollars now. It takes 10 seconds.',
-};
-
-const getCategory = notification => {
-  const {payload} = notification || {};
-  const {category} = payload || {};
-
-  return category;
 };
 
 export {useNotificationsSupport} from './useNotifications.common';
