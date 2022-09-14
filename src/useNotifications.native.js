@@ -9,10 +9,11 @@ import {
   useNotificationsStateSwitch,
   useStoreProperty,
   getCategory,
+  BROADCAST_CHANNEL,
 } from './useNotifications.common';
 
 const {notificationTime, notificationSchedule} = Config;
-const CHANNEL_ID = 'org.gooddollar.notifications.claim';
+const CHANNEL_ID = BROADCAST_CHANNEL + '.claim';
 
 const NOTIFICATION = {
   title: "It's that time of the day 💸 💙",

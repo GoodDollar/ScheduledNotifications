@@ -1,6 +1,7 @@
 import {MessagingAPI} from './apis';
 import {noop} from './utils';
 import {
+  BROADCAST_CHANNEL,
   getCategory,
   useNotificationsStateSwitch,
   useStoreProperty,
@@ -16,7 +17,10 @@ const getNotification = payload => {
   };
 };
 
-export {useNotificationsSupport} from './useNotifications.common';
+export {
+  useNotificationsSupport,
+  BROADCAST_CHANNEL,
+} from './useNotifications.common';
 
 export const useNotificationsOptions = () => {
   const [token, setToken] = useStoreProperty('notificationsToken');
@@ -65,11 +69,31 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
     [onReceived, onOpened],
   );
 
+  const handleOpenedInBackground = useCallback(
+    event => {
+      const notification = getNotification(event.data);
+      const category = getCategory(notification);
+
+      onOpened(notification, category);
+    },
+    [onOpened],
+  );
+
   useEffect(() => {
     if (!enabled) {
       return;
     }
 
-    return MessagingAPI.onMessage(handleReceived);
-  }, [enabled, handleReceived]);
+    const channel = new BroadcastChannel(BROADCAST_CHANNEL);
+    const unsubscribe = MessagingAPI.onMessage(handleReceived);
+
+    channel.addEventListener('message', handleOpenedInBackground);
+
+    return () => {
+      unsubscribe();
+
+      channel.removeEventListener('message', handleOpenedInBackground);
+      channel.close();
+    };
+  }, [enabled, handleReceived, handleOpenedInBackground]);
 };

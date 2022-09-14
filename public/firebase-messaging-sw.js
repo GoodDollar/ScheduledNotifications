@@ -24,19 +24,48 @@ var Messaging = firebase.messaging;
 if (Messaging.isSupported()) {
   // Retrieve firebase messaging
   var messaging = Messaging();
+  var lastData = {};
+  var channel = new BroadcastChannel('org.gooddollar.notifications');
+
+  function activateClient(clientList) {
+    var activeWindow = clientList[0];
+
+    return activeWindow ? activeWindow.focus() : clients.openWindow('/');
+  }
 
   messaging.onBackgroundMessage(function (payload) {
-    console.log('Received background message ', payload);
+    var notification = payload.notification;
 
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-      body: payload.notification.body,
-    };
-
-    // TODO: custom fields
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    lastData = payload.data;
+    self.registration.showNotification(notification.title, {
+      body: notification.body,
+      icon: notification.image,
+      data: payload.data,
+    });
   });
 
-  // TODO: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerGlobalScope/notificationclick_event
+  self.addEventListener('notificationclick', function (event) {
+    var notification = event.notification;
+
+    var payload = {
+      data: notification.data || lastData,
+      notification: {
+        title: notification.title,
+        body: notification.body,
+        image: notification.icon,
+      },
+    };
+
+    notification.close();
+    lastData = {};
+
+    event.waitUntil(
+      clients
+        .matchAll({type: 'window'})
+        .then(activateClient)
+        .then(function () {
+          channel.postMessage(payload);
+        }),
+    );
+  });
 }

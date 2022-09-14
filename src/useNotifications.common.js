@@ -12,6 +12,8 @@ const getStoreProperty = (userStorage, property) => {
   return userStorage.userProperties.getLocal(property);
 };
 
+export const BROADCAST_CHANNEL = 'org.gooddollar.notifications';
+
 export const getCategory = notification => {
   const {payload} = notification || {};
   const {category} = payload || {};
