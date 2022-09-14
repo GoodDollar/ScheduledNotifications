@@ -17,14 +17,19 @@ var firebaseConfig = {
   appId: '1:258416133884:web:166018f41dcb238aa83979',
 };
 
+var clientOpts = {
+  type: 'window',
+  includeUncontrolled: true,
+};
+
 firebase.initializeApp(firebaseConfig);
 
+var lastData = {};
 var Messaging = firebase.messaging;
 
 if (Messaging.isSupported()) {
   // Retrieve firebase messaging
   var messaging = Messaging();
-  var lastData = {};
   var channel = new BroadcastChannel('org.gooddollar.notifications');
 
   function activateClient(clientList) {
@@ -35,6 +40,11 @@ if (Messaging.isSupported()) {
 
   messaging.onBackgroundMessage(function (payload) {
     var notification = payload.notification;
+
+    channel.postMessage({
+      event: 'received',
+      data: payload,
+    });
 
     lastData = payload.data;
     self.registration.showNotification(notification.title, {
@@ -61,11 +71,16 @@ if (Messaging.isSupported()) {
 
     event.waitUntil(
       clients
-        .matchAll({type: 'window'})
+        .matchAll(clientOpts)
         .then(activateClient)
         .then(function () {
-          channel.postMessage(payload);
+          channel.postMessage({
+            event: 'opened',
+            data: payload,
+          });
         }),
     );
   });
+
+  //TODO: https://stackoverflow.com/questions/49954977/service-worker-wait-for-clients-openwindow-to-complete-before-postmessage
 }

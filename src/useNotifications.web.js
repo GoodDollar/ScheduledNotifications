@@ -69,14 +69,29 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
     [onReceived, onOpened],
   );
 
-  const handleOpenedInBackground = useCallback(
-    event => {
-      const notification = getNotification(event.data);
+  const handleFromBackground = useCallback(
+    nativeEvent => {
+      const {event, data} = nativeEvent.data;
+      const notification = getNotification(data);
       const category = getCategory(notification);
+      let handlerFn;
 
-      onOpened(notification, category);
+      switch (event) {
+        case 'received':
+          handlerFn = onReceived;
+          break;
+        case 'opened':
+          handlerFn = onOpened;
+          break;
+        default:
+          break;
+      }
+
+      if (handlerFn) {
+        handlerFn(notification, category);
+      }
     },
-    [onOpened],
+    [onOpened, onReceived],
   );
 
   useEffect(() => {
@@ -87,13 +102,13 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
     const channel = new BroadcastChannel(BROADCAST_CHANNEL);
     const unsubscribe = MessagingAPI.onMessage(handleReceived);
 
-    channel.addEventListener('message', handleOpenedInBackground);
+    channel.addEventListener('message', handleFromBackground);
 
     return () => {
       unsubscribe();
 
-      channel.removeEventListener('message', handleOpenedInBackground);
+      channel.removeEventListener('message', handleFromBackground);
       channel.close();
     };
-  }, [enabled, handleReceived, handleOpenedInBackground]);
+  }, [enabled, handleReceived, handleFromBackground]);
 };
