@@ -18,10 +18,6 @@ export const PermissionsAPI = new (class {
     android: ['alert'],
   });
 
-  constructor() {
-    this._toResult = this._toResult.bind(this);
-  }
-
   async check(permission) {
     const {platformPermissions, _toResult} = this;
     const platformPermission = platformPermissions[permission];
@@ -68,7 +64,7 @@ export const PermissionsAPI = new (class {
   }
 
   /** @private */
-  _toResult(status) {
+  _toResult = status => {
     const statusValues = this.notificationOptions.map(option => status[option]);
 
     if (statusValues.every(value => !!value)) {
@@ -78,7 +74,7 @@ export const PermissionsAPI = new (class {
     return Platform.OS === 'android' || status.authorizationStatus === 1
       ? Denied
       : Prompt;
-  }
+  };
 })();
 
 export const MessagingAPI = {

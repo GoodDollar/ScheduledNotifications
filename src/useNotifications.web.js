@@ -1,12 +1,13 @@
+import {useCallback, useEffect, useRef} from 'react';
 import {MessagingAPI} from './apis';
 import {noop} from './utils';
+import {BROADCAST_CHANNEL} from './constants';
 import {
-  BROADCAST_CHANNEL,
   getCategory,
   useNotificationsStateSwitch,
   useStoreProperty,
 } from './useNotifications.common';
-import {useCallback, useEffect} from 'react';
+import {NotificationsAPI} from './apis.web';
 
 const getNotification = payload => {
   const {data, notification} = payload;
@@ -17,10 +18,7 @@ const getNotification = payload => {
   };
 };
 
-export {
-  useNotificationsSupport,
-  BROADCAST_CHANNEL,
-} from './useNotifications.common';
+export {useNotificationsSupport} from './useNotifications.common';
 
 export const useNotificationsOptions = () => {
   const [token, setToken] = useStoreProperty('notificationsToken');
@@ -47,6 +45,7 @@ export const useNotificationsOptions = () => {
 
 export const useNotifications = (onOpened = noop, onReceived = noop) => {
   const [enabled] = useNotificationsOptions();
+  const mountedRef = useRef(false);
 
   const handleReceived = useCallback(
     payload => {
@@ -72,24 +71,16 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
   const handleFromBackground = useCallback(
     nativeEvent => {
       const {event, data} = nativeEvent.data;
+
+      if (!['received', 'opened'].includes(event)) {
+        return;
+      }
+
       const notification = getNotification(data);
       const category = getCategory(notification);
-      let handlerFn;
+      const handlerFn = event === 'received' ? onReceived : onOpened;
 
-      switch (event) {
-        case 'received':
-          handlerFn = onReceived;
-          break;
-        case 'opened':
-          handlerFn = onOpened;
-          break;
-        default:
-          break;
-      }
-
-      if (handlerFn) {
-        handlerFn(notification, category);
-      }
+      handlerFn(notification, category);
     },
     [onOpened, onReceived],
   );
@@ -111,4 +102,13 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
       channel.close();
     };
   }, [enabled, handleReceived, handleFromBackground]);
+
+  useEffect(() => {
+    if (!enabled || mountedRef.current) {
+      return;
+    }
+
+    mountedRef.current = true;
+    NotificationsAPI.getInitialNotification();
+  }, [enabled]);
 };

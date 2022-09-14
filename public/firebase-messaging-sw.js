@@ -25,6 +25,7 @@ var clientOpts = {
 firebase.initializeApp(firebaseConfig);
 
 var lastData = {};
+var initialData = null;
 var Messaging = firebase.messaging;
 
 if (Messaging.isSupported()) {
@@ -32,21 +33,33 @@ if (Messaging.isSupported()) {
   var messaging = Messaging();
   var channel = new BroadcastChannel('org.gooddollar.notifications');
 
-  function activateClient(clientList) {
-    var activeWindow = clientList[0];
-
-    return activeWindow ? activeWindow.focus() : clients.openWindow('/');
+  function respond(eventName, payload) {
+    channel.postMessage({
+      event: eventName,
+      data: payload,
+    });
   }
+
+  channel.addEventListener('message', event => {
+    if (event.data !== 'getInitialNotification') {
+      return;
+    }
+
+    respond('initialData', initialData);
+
+    if (initialData) {
+      respond('received', initialData);
+      respond('opened', initialData);
+      initialData = null;
+    }
+  });
 
   messaging.onBackgroundMessage(function (payload) {
     var notification = payload.notification;
 
-    channel.postMessage({
-      event: 'received',
-      data: payload,
-    });
-
+    respond('received', payload);
     lastData = payload.data;
+
     self.registration.showNotification(notification.title, {
       body: notification.body,
       icon: notification.image,
@@ -66,20 +79,23 @@ if (Messaging.isSupported()) {
       },
     };
 
+    function activateAndNotifyClient(clientList) {
+      var activeWindow = clientList[0];
+
+      if (!activeWindow) {
+        initialData = payload;
+        return clients.openWindow('/');
+      }
+
+      return activeWindow.focus().then(() => {
+        respond('opened', payload);
+      });
+    }
+
     notification.close();
     lastData = {};
 
-    event.waitUntil(
-      clients
-        .matchAll(clientOpts)
-        .then(activateClient)
-        .then(function () {
-          channel.postMessage({
-            event: 'opened',
-            data: payload,
-          });
-        }),
-    );
+    event.waitUntil(clients.matchAll(clientOpts).then(activateAndNotifyClient));
   });
 
   //TODO: https://stackoverflow.com/questions/49954977/service-worker-wait-for-clients-openwindow-to-complete-before-postmessage

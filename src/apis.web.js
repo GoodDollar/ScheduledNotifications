@@ -8,6 +8,7 @@ import {
 } from 'firebase/messaging';
 
 import Config from './config';
+import {BROADCAST_CHANNEL} from './constants';
 import {Permissions, PermissionStatuses} from './types';
 
 const {Granted, Undetermined, Denied, Disabled, Prompt} = PermissionStatuses;
@@ -20,7 +21,24 @@ export const NotificationsAPI = new (class {
   }
 
   async getInitialNotification() {
-    return null;
+    const channel = new BroadcastChannel(BROADCAST_CHANNEL);
+
+    return new Promise(resolve => {
+      const onSWMessage = nativeEvent => {
+        const {event, data} = nativeEvent.data;
+
+        if (event !== 'initialData') {
+          return;
+        }
+
+        resolve(data);
+        channel.removeEventListener('message', onSWMessage);
+        channel.close();
+      };
+
+      channel.addEventListener('message', onSWMessage);
+      channel.postMessage('getInitialNotification');
+    });
   }
 })();
 

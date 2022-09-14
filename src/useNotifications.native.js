@@ -9,11 +9,10 @@ import {
   useNotificationsStateSwitch,
   useStoreProperty,
   getCategory,
-  BROADCAST_CHANNEL,
 } from './useNotifications.common';
+import {CHANNEL_ID} from './constants';
 
 const {notificationTime, notificationSchedule} = Config;
-const CHANNEL_ID = BROADCAST_CHANNEL + '.claim';
 
 const NOTIFICATION = {
   title: "It's that time of the day 💸 💙",
@@ -72,7 +71,7 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
   const mountedRef = useRef(false);
 
   const receivedHandler = useCallback(
-    (notification, completion) => {
+    (notification, completion = noop) => {
       onReceived(notification, getCategory(notification));
 
       // should call completion otherwise notifications won't receive in background
@@ -104,9 +103,10 @@ export const useNotifications = (onOpened = noop, onReceived = noop) => {
           return;
         }
 
+        receivedHandler(notification);
         openedHandler(notification);
       });
-  }, [enabled, openedHandler]);
+  }, [enabled, openedHandler, receivedHandler]);
 
   useEffect(() => {
     if (!enabled) {
